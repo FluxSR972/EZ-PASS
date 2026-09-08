@@ -50,22 +50,20 @@
 
     <!-- SECTION 1 : COURS EN COMMUN (PREPA / TUTORAT) -->
     <main id="content-courses" class="space-y-6">
-      <!-- FORMULAIRE UPLOAD PDF -->
       <div class="bg-slate-800/60 border border-slate-700 p-4 rounded-xl">
         <h3 class="font-semibold text-lg mb-3 text-sky-300">Ajouter un nouveau cours en commun</h3>
-        <form id="uploadForm" class="grid grid-cols-1 md:grid-cols-4 gap-3">
+        <form id="uploadForm" onsubmit="handleCourseUpload(event)" class="grid grid-cols-1 md:grid-cols-4 gap-3">
           <input id="courseTitle" type="text" placeholder="Titre du cours (ex: UE1 - Chimie)" class="bg-slate-900 border border-slate-700 rounded p-2 text-sm text-white" required>
           <input id="courseMatiere" type="text" placeholder="Matière / Chapitre" class="bg-slate-900 border border-slate-700 rounded p-2 text-sm text-white" required>
           <input id="coursePdf" type="file" accept="application/pdf" class="bg-slate-900 border border-slate-700 rounded p-1 text-sm text-slate-400" required>
-          <button type="submit" class="bg-sky-600 hover:bg-sky-500 font-semibold rounded text-sm py-2 transition">Téléverser et Partager</button>
+          <button type="submit" id="uploadBtn" class="bg-sky-600 hover:bg-sky-500 font-semibold rounded text-sm py-2 transition">Téléverser et Partager</button>
         </form>
       </div>
 
-      <!-- LISTE DES COURS EN COMMUN -->
       <div class="space-y-4">
-        <h3 class="text-xl font-bold" id="currentCategoryTitle">Cours Prépa</h3>
+        <h3 class="text-xl font-bold" id="currentCategoryTitle">Cours Prépa Partagés</h3>
         <div id="coursesList" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <!-- Les cours partagés s'afficheront ici -->
+          <!-- Chargement dynamique -->
         </div>
       </div>
     </main>
@@ -76,13 +74,13 @@
         <h3 class="font-bold text-xl text-sky-400 mb-2">Ton Questionnaire d'Organisation (Privé)</h3>
         <p class="text-sm text-slate-400 mb-4">L'IA va calibrer ton planning de révision sur-mesure selon ton rythme et tes coefficients.</p>
         
-        <form id="profileForm" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <form onsubmit="handleProfileSubmit(event)" class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label class="block text-xs text-slate-400 mb-1">Matière préférée</label>
-            <input id="favSubject" type="text" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-sm">
+            <input id="favSubject" type="text" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-sm" required>
           </div>
           <div>
-            <label class="block text-xs text-slate-400 mb-1">Pic d'énergie (Moment le plus en forme)</label>
+            <label class="block text-xs text-slate-400 mb-1">Pic d'énergie</label>
             <select id="activeTime" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-sm">
               <option value="matin">Matin (8h - 12h)</option>
               <option value="apres-midi">Après-midi (14h - 18h)</option>
@@ -90,7 +88,7 @@
             </select>
           </div>
           <div>
-            <label class="block text-xs text-slate-400 mb-1">Baisse d'énergie (Coup de barre)</label>
+            <label class="block text-xs text-slate-400 mb-1">Baisse d'énergie</label>
             <select id="leastActiveTime" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-sm">
               <option value="debut-aprem">Début d'après-midi (13h - 15h)</option>
               <option value="fin-soiree">Fin de soirée</option>
@@ -98,7 +96,7 @@
           </div>
           <div>
             <label class="block text-xs text-slate-400 mb-1">Horaires de travail (ex: 08:00 - 22:00)</label>
-            <input id="workHours" type="text" placeholder="08:00 - 22:00" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-sm">
+            <input id="workHours" type="text" placeholder="08:00 - 22:00" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-sm" required>
           </div>
           <div>
             <label class="block text-xs text-slate-400 mb-1">Créneaux de Sport / Repos</label>
@@ -106,17 +104,17 @@
           </div>
           <div>
             <label class="block text-xs text-slate-400 mb-1">Matières difficiles / Coefficients</label>
-            <input id="difficulties" type="text" placeholder="ex: Anatomie (coeff 10), Chimie (coeff 8)" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-sm">
+            <input id="difficulties" type="text" placeholder="ex: Anatomie (coeff 10), Biologie (coeff 8)" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-sm" required>
           </div>
           <div class="md:col-span-2">
-            <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-500 font-semibold py-2.5 rounded transition">Générer mon Emploi du Temps personnalisé</button>
+            <button type="submit" id="planningBtn" class="w-full bg-emerald-600 hover:bg-emerald-500 font-semibold py-2.5 rounded transition">Générer mon Emploi du Temps personnalisé</button>
           </div>
         </form>
       </div>
 
-      <!-- AFFICHAGE DU PLANNING GENERÉ -->
       <div id="timetableDisplay" class="bg-slate-800/40 border border-slate-700 p-6 rounded-xl hidden">
         <h3 class="font-bold text-xl mb-4 text-emerald-400">Ton Planning Hebdomadaire des J</h3>
+        <div id="scheduleAdvice" class="mb-4 text-sm bg-slate-800 p-3 rounded border border-slate-700 italic text-slate-300"></div>
         <div id="scheduleGrid" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
       </div>
     </main>
@@ -125,7 +123,7 @@
     <main id="content-admin" class="hidden space-y-4">
       <h3 class="text-xl font-bold text-red-400">Erreurs signalées par les étudiants</h3>
       <div id="reportsList" class="space-y-3">
-        <!-- Les erreurs signalées apparaîtront ici pour correction -->
+        <!-- Rendu dynamique des signalements -->
       </div>
     </main>
 
@@ -135,7 +133,6 @@
     let currentUser = null;
     let currentTab = 'prepa';
 
-    // --- AUTHENTIFICATION ---
     async function login() {
       const username = document.getElementById('authUsername').value;
       const pin = document.getElementById('authPin').value;
@@ -176,10 +173,12 @@
       if (currentUser.role === 'admin') {
         document.getElementById('tab-admin').classList.remove('hidden');
       }
+      if (currentUser.hasProfile) {
+        loadTimetable();
+      }
       loadCourses();
     }
 
-    // --- ONGLETS ---
     function switchTab(tab) {
       currentTab = tab;
       ['prepa', 'tutorat', 'planning', 'admin'].forEach(t => {
@@ -199,24 +198,205 @@
       }
     }
 
-    // --- SIGNALEMENT D'ERREURS ---
+    async function handleCourseUpload(e) {
+      e.preventDefault();
+      const btn = document.getElementById('uploadBtn');
+      btn.innerText = "Téléversement...";
+      btn.disabled = true;
+
+      const formData = new FormData();
+      formData.append('id', Math.random().toString(36).substring(2, 10));
+      formData.append('title', document.getElementById('courseTitle').value);
+      formData.append('matiere', document.getElementById('courseMatiere').value);
+      formData.append('category', currentTab);
+      formData.append('pdf', document.getElementById('coursePdf').files[0]);
+
+      const res = await fetch('/api/courses', { method: 'POST', body: formData });
+      if (res.ok) {
+        document.getElementById('uploadForm').reset();
+        loadCourses();
+      } else {
+        alert("Erreur lors de l'envoi du cours.");
+      }
+      btn.innerText = "Téléverser et Partager";
+      btn.disabled = false;
+    }
+
+    async function loadCourses() {
+      const res = await fetch('/api/courses');
+      const courses = await res.json();
+      const listContainer = document.getElementById('coursesList');
+      listContainer.innerHTML = '';
+
+      const filtered = courses.filter(c => c.category === currentTab);
+      if (filtered.length === 0) {
+        listContainer.innerHTML = `<p class="text-slate-500 text-sm">Aucun cours disponible dans cette section.</p>`;
+        return;
+      }
+
+      filtered.forEach(course => {
+        const card = document.createElement('div');
+        card.className = "bg-slate-800 border border-slate-700 p-4 rounded-xl space-y-3";
+        card.innerHTML = `
+          <div class="flex justify-between items-start">
+            <div>
+              <h4 class="font-bold text-sky-300 text-lg">${course.title}</h4>
+              <p class="text-xs text-slate-400">${course.matiere}</p>
+            </div>
+            <span class="text-[10px] bg-slate-700 px-2 py-1 rounded text-slate-300">${new Date(course.created_at).toLocaleDateString()}</span>
+          </div>
+          <div class="flex flex-wrap gap-2 pt-2 border-t border-slate-700/50">
+            <button onclick="generateContent('${course.id}', 'qcm')" class="bg-indigo-600 hover:bg-indigo-500 text-xs px-3 py-1.5 rounded font-medium">⚡ Générer QCM</button>
+            <button onclick="generateContent('${course.id}', 'flashcards')" class="bg-emerald-600 hover:bg-emerald-500 text-xs px-3 py-1.5 rounded font-medium">🎴 Flashcards</button>
+            <button onclick="generateContent('${course.id}', 'questions')" class="bg-amber-600 hover:bg-amber-500 text-xs px-3 py-1.5 rounded font-medium">❓ Questions</button>
+          </div>
+          <div id="items-${course.id}" class="space-y-2 pt-2"></div>
+        `;
+        listContainer.appendChild(card);
+        loadCourseItems(course.id);
+      });
+    }
+
+    async function generateContent(courseId, type) {
+      const res = await fetch('/api/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ courseId, type })
+      });
+      if (res.ok) {
+        loadCourseItems(courseId);
+      } else {
+        alert("Erreur lors de la génération par IA.");
+      }
+    }
+
+    async function loadCourseItems(courseId) {
+      const res = await fetch(`/api/courses/${courseId}/items`);
+      const items = await res.json();
+      const container = document.getElementById(`items-${courseId}`);
+      container.innerHTML = '';
+
+      items.forEach(item => {
+        const div = document.createElement('div');
+        div.className = "bg-slate-900/80 p-3 rounded border border-slate-700/50 text-xs space-y-1 relative group";
+        
+        let bodyHtml = '';
+        if (item.type === 'qcm') {
+          bodyHtml = `<strong>[QCM]</strong> ${item.content.question}<br><span class="text-slate-400">Réponse : ${item.content.options[item.content.correctIndex]}</span>`;
+        } else if (item.type === 'flashcards') {
+          bodyHtml = `<strong>[Flashcard]</strong> Q: ${item.content.question} | R: ${item.content.answer}`;
+        } else {
+          bodyHtml = `<strong>[Question]</strong> ${item.content.question}`;
+        }
+
+        div.innerHTML = `
+          <div>${bodyHtml}</div>
+          <button onclick="reportError('${item.id}', '${courseId}')" class="text-red-400 hover:text-red-300 text-[10px] underline mt-1 block">🚩 Signaler une erreur</button>
+        `;
+        container.appendChild(div);
+      });
+    }
+
     async function reportError(itemId, courseId) {
-      const reason = prompt("Décris l'erreur constatée sur ce contenu :");
+      const reason = prompt("Décris l'erreur constatée :");
       if (!reason) return;
       await fetch('/api/reports', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ itemId, courseId, userId: currentUser.userId, reason })
       });
-      alert("Erreur signalée à l'administrateur. Merci !");
+      alert("Erreur signalée à l'administrateur.");
     }
 
-    async function loadCourses() {
-      // Charger les cours partagés depuis l'API
+    async function handleProfileSubmit(e) {
+      e.preventDefault();
+      const btn = document.getElementById('planningBtn');
+      btn.innerText = "Génération du planning par l'IA...";
+      btn.disabled = true;
+
+      const profileData = {
+        favoriteSubject: document.getElementById('favSubject').value,
+        activeTime: document.getElementById('activeTime').value,
+        leastActiveTime: document.getElementById('leastActiveTime').value,
+        startHour: document.getElementById('workHours').value.split('-')[0] || '08:00',
+        endHour: document.getElementById('workHours').value.split('-')[1] || '22:00',
+        sportHours: document.getElementById('sportHours').value,
+        difficultSubjects: document.getElementById('difficulties').value,
+        coefficients: document.getElementById('difficulties').value
+      };
+
+      const res = await fetch('/api/user/profile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: currentUser.userId, profileData })
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        displayTimetable(data.schedule);
+      } else {
+        alert("Erreur lors de la génération de l'emploi du temps.");
+      }
+      btn.innerText = "Générer mon Emploi du Temps personnalisé";
+      btn.disabled = false;
+    }
+
+    async function loadTimetable() {
+      const res = await fetch(`/api/user/timetable/${currentUser.userId}`);
+      const data = await res.json();
+      if (data.schedule) displayTimetable(data.schedule);
+    }
+
+    function displayTimetable(schedule) {
+      document.getElementById('timetableDisplay').classList.remove('hidden');
+      document.getElementById('scheduleAdvice').innerText = schedule.advice || '';
+      const grid = document.getElementById('scheduleGrid');
+      grid.innerHTML = '';
+
+      Object.entries(schedule.planning || {}).forEach(([day, slots]) => {
+        const dayCard = document.createElement('div');
+        dayCard.className = "bg-slate-900/90 border border-slate-700 p-3 rounded-lg";
+        let slotsHtml = slots.map(s => `<div class="text-xs border-b border-slate-800 py-1 flex justify-between"><span class="text-sky-400 font-mono">${s.time}</span><span class="text-slate-300">${s.activity}</span></div>`).join('');
+        dayCard.innerHTML = `<h5 class="font-bold text-sky-300 border-b border-slate-700 pb-1 mb-2">${day}</h5><div class="space-y-1">${slotsHtml}</div>`;
+        grid.appendChild(dayCard);
+      });
     }
 
     async function loadReports() {
-      // Charger les erreurs pour l'admin
+      const res = await fetch('/api/admin/reports');
+      const reports = await res.json();
+      const container = document.getElementById('reportsList');
+      container.innerHTML = '';
+
+      if (reports.length === 0) {
+        container.innerHTML = `<p class="text-slate-500 text-sm">Aucune erreur signalée pour le moment.</p>`;
+        return;
+      }
+
+      reports.forEach(r => {
+        const card = document.createElement('div');
+        card.className = "bg-slate-800 border border-slate-700 p-4 rounded-xl space-y-2";
+        card.innerHTML = `
+          <div class="flex justify-between text-xs text-slate-400">
+            <span>Signalé par : <strong>${r.username}</strong></span>
+            <span class="text-red-400">Raison : ${r.reason}</span>
+          </div>
+          <div class="bg-slate-900 p-2 rounded text-xs text-slate-300">
+            Contenu actuel : ${JSON.stringify(r.content)}
+          </div>
+          <button onclick="resolveReport(${r.report_id}, '${r.item_id}')" class="bg-emerald-600 hover:bg-emerald-500 text-xs px-3 py-1 rounded font-semibold">Marquer comme résolu</button>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    async function resolveReport(reportId, itemId) {
+      await fetch('/api/admin/items/update', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reportId, itemId, newContent: {} })
+      });
+      loadReports();
     }
   </script>
 </body>
