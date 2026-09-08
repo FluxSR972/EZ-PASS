@@ -1,789 +1,223 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Carnet de révision</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400..600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-<style>
-  :root{
-    --paper:#FBF7EF;
-    --paper-raised:#F4EEE1;
-    --ink:#40382E;
-    --muted:#8C8071;
-    --line:#E5DDCC;
-    --accent:#B0642F;
-    --accent-soft:#F3E2CD;
-    --green:#5C7A52;
-    --green-soft:#E7ECDD;
-    --blue:#3E6FA6;
-    --blue-soft:#DCE7F2;
-    --purple:#6B4FA0;
-    --purple-soft:#E6DEF2;
-  }
-  *{box-sizing:border-box;}
-  html{background:var(--paper);height:100%;}
-  body{
-    margin:0;
-    min-height:100%;
-    background:var(--paper);
-    color:var(--ink);
-    font-family:'Inter',sans-serif;
-    -webkit-font-smoothing:antialiased;
-  }
-  .wrap{min-height:100vh;}
-  .toast{
-    position:fixed;left:50%;bottom:-60px;transform:translateX(-50%);
-    background:var(--ink);color:var(--paper);font-size:13px;padding:10px 16px;
-    border-radius:6px;transition:bottom 0.25s ease;z-index:50;max-width:88%;text-align:center;
-  }
-  .toast.show{bottom:26px;}
-  .wrap{max-width:640px;margin:0 auto;padding:28px 20px 80px;}
-  h1,h2,h3{font-family:'Fraunces',serif;font-weight:500;margin:0;}
-  h1{font-size:28px;letter-spacing:-0.01em;}
-  h2{font-size:20px;margin-bottom:4px;}
-  .subtitle{color:var(--muted);font-size:14px;margin-top:4px;}
-  nav{display:flex;gap:8px;margin:26px 0 22px;flex-wrap:wrap;}
-  nav button{
-    background:var(--paper-raised);border:1px solid var(--line);font-family:'Inter';font-size:14px;
-    font-weight:600;color:var(--muted);padding:9px 18px;cursor:pointer;border-radius:20px;
-  }
-  nav button.active{color:#fff;background:var(--accent);border-color:var(--accent);}
-  .row{
-    display:flex;justify-content:space-between;align-items:center;
-    padding:14px 0;border-bottom:1px solid var(--line);gap:12px;
-  }
-  .row:last-child{border-bottom:none;}
-  .row-main{flex:1;min-width:0;}
-  .row-title{font-size:15px;font-weight:600;}
-  .row-sub{font-size:13px;color:var(--muted);margin-top:5px;display:flex;align-items:center;gap:7px;flex-wrap:wrap;}
-  .chip{
-    display:inline-block;padding:3px 10px;border-radius:11px;font-size:11.5px;font-weight:700;
-  }
-  .tag{
-    font-size:12px;padding:4px 10px;border-radius:20px;white-space:nowrap;font-weight:600;
-  }
-  .tag.due{background:var(--accent);color:#fff;}
-  .tag.upcoming{background:var(--paper-raised);color:var(--muted);border:1px solid var(--line);}
-  .tag.done{background:var(--green);color:#fff;}
-  button.btn{
-    font-family:'Inter';font-size:14px;font-weight:700;padding:10px 18px;
-    border-radius:20px;border:1px solid var(--ink);background:var(--ink);color:var(--paper);
-    cursor:pointer;
-  }
-  button.btn.secondary{background:none;color:var(--ink);border-color:var(--ink);}
-  button.btn.ghost{background:none;border-color:var(--line);color:var(--muted);}
-  button.btn.blue{background:var(--blue);border-color:var(--blue);color:#fff;}
-  button.btn.blue.outline{background:var(--blue-soft);border-color:var(--blue-soft);color:var(--blue);}
-  button.btn.green{background:var(--green);border-color:var(--green);color:#fff;}
-  button.btn.green.outline{background:var(--green-soft);border-color:var(--green-soft);color:var(--green);}
-  button.btn.purple{background:var(--purple);border-color:var(--purple);color:#fff;}
-  button.btn.purple.outline{background:var(--purple-soft);border-color:var(--purple-soft);color:var(--purple);}
-  button.btn:disabled{opacity:0.45;cursor:default;}
-  button.btn-small{font-size:13px;padding:8px 14px;}
-  .empty{
-    padding:40px 0;text-align:center;color:var(--muted);font-size:14px;
-  }
-  .fab{
-    position:fixed;bottom:26px;right:50%;transform:translateX(320px);
-    width:56px;height:56px;border-radius:50%;background:var(--accent);color:#fff;
-    border:none;font-size:28px;cursor:pointer;box-shadow:0 6px 16px rgba(176,100,47,0.35);
-    line-height:56px;text-align:center;
-  }
-  @media (max-width:680px){ .fab{ right:24px; transform:none; } }
-  .modal-bg{
-    position:fixed;inset:0;background:rgba(64,56,46,0.45);display:flex;align-items:flex-end;
-    justify-content:center;z-index:20;
-  }
-  .modal{
-    background:var(--paper-raised);width:100%;max-width:640px;border-radius:18px 18px 0 0;
-    padding:24px 20px 28px;max-height:88vh;overflow-y:auto;
-  }
-  label{display:block;font-size:13px;color:var(--muted);margin:14px 0 6px;font-weight:600;}
-  input[type=text], textarea, select{
-    width:100%;font-family:'Inter';font-size:15px;padding:11px 13px;
-    border:1.5px solid var(--line);border-radius:10px;background:#fff;color:var(--ink);
-  }
-  textarea{resize:vertical;min-height:90px;}
-  .modal-actions{display:flex;gap:10px;margin-top:22px;}
-  .modal-actions button{flex:1;}
-  .filerow{display:flex;gap:10px;align-items:center;margin-top:6px;}
-  .hint{font-size:12px;color:var(--muted);margin-top:6px;}
-  .back{
-    background:none;border:none;color:var(--muted);font-size:14px;cursor:pointer;
-    padding:0;margin-bottom:16px;font-family:'Inter';
-  }
-  .section{margin-top:26px;}
-  .section-title{display:flex;align-items:center;gap:8px;font-family:'Fraunces',serif;font-size:18px;margin-bottom:6px;}
-  .divider{height:1px;background:var(--line);margin:24px 0;}
-  .textpreview{
-    font-size:14px;line-height:1.6;color:var(--muted);white-space:pre-wrap;
-    max-height:160px;overflow-y:auto;padding:14px;background:var(--paper-raised);
-    border-radius:10px;border:1px solid var(--line);
-  }
-  .actionsrow{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px;}
-  .card{
-    background:var(--paper-raised);border:1.5px solid var(--line);border-radius:14px;
-    padding:28px 22px;text-align:center;min-height:140px;display:flex;align-items:center;
-    justify-content:center;font-size:17px;line-height:1.5;cursor:pointer;
-  }
-  .card .label{position:absolute;top:14px;left:18px;font-size:12px;color:var(--muted);}
-  .card-wrap{position:relative;}
-  .card.long{
-    text-align:left;align-items:flex-start;justify-content:flex-start;display:block;
-    max-height:420px;overflow-y:auto;
-  }
-  .progress{font-size:13px;color:var(--muted);margin-bottom:10px;font-weight:600;}
-  .qcm-opt{
-    display:block;width:100%;text-align:left;padding:13px 15px;margin-top:8px;
-    border:1.5px solid var(--line);border-radius:10px;background:#fff;font-size:14px;
-    cursor:pointer;font-family:'Inter';color:var(--ink);
-  }
-  .qcm-opt.correct{background:var(--green-soft);border-color:var(--green);color:var(--green);font-weight:600;}
-  .qcm-opt.wrong{background:var(--accent-soft);border-color:var(--accent);color:var(--accent);font-weight:600;}
-  .explain{font-size:13px;color:var(--muted);margin-top:12px;line-height:1.5;background:var(--paper-raised);padding:12px 14px;border-radius:10px;}
-  .loading{font-size:13px;color:var(--muted);margin-top:10px;}
-  .spinner{
-    display:inline-block;width:12px;height:12px;border:2px solid var(--line);
-    border-top-color:var(--accent);border-radius:50%;animation:spin 0.7s linear infinite;
-    margin-right:6px;vertical-align:-1px;
-  }
-  @keyframes spin{to{transform:rotate(360deg);}}
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PASS Révisions - Plateforme Partagée</title>
+  <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
-<div class="wrap" id="app"></div>
+<body class="bg-slate-900 text-slate-100 min-h-screen">
 
-<script>
-pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
-
-const INTERVALS = [1,3,7,15,30,60];
-
-let data = { courses: [] };
-let view = { tab: 'today', courseId: null, mode: null, cardIndex: 0, flipped: false, qIndex: 0, qSelected: null, qScore: 0 };
-
-function toDateStr(d){
-  const y=d.getFullYear(), m=String(d.getMonth()+1).padStart(2,'0'), day=String(d.getDate()).padStart(2,'0');
-  return `${y}-${m}-${day}`;
-}
-function todayStr(){ return toDateStr(new Date()); }
-function addDays(dateStr, n){
-  const d = new Date(dateStr+'T00:00:00'); d.setDate(d.getDate()+n); return toDateStr(d);
-}
-function fmtDate(dateStr){
-  const d = new Date(dateStr+'T00:00:00');
-  return d.toLocaleDateString('fr-FR', { day:'numeric', month:'short' });
-}
-function uid(){ return Math.random().toString(36).slice(2,10); }
-
-function escapeHtml(s){
-  if(s===null || s===undefined) return '';
-  return String(s)
-    .replace(/&/g,'&amp;')
-    .replace(/</g,'&lt;')
-    .replace(/>/g,'&gt;')
-    .replace(/"/g,'&quot;')
-    .replace(/'/g,'&#39;');
-}
-
-function parseAiJson(text){
-  let clean = text.replace(/```json|```/g,'').trim();
-  try{ return JSON.parse(clean); }
-  catch(e){
-    const start = clean.indexOf('{');
-    const end = clean.lastIndexOf('}');
-    if(start !== -1 && end !== -1 && end > start){
-      try{ return JSON.parse(clean.slice(start, end+1)); }catch(e2){}
-    }
-    throw e;
-  }
-}
-
-function arrayBufferToBase64(buffer){
-  let binary = '';
-  const bytes = new Uint8Array(buffer);
-  const chunkSize = 0x8000;
-  for(let i=0;i<bytes.length;i+=chunkSize){
-    binary += String.fromCharCode.apply(null, bytes.subarray(i, i+chunkSize));
-  }
-  return btoa(binary);
-}
-
-const MATIERE_COLORS = [
-  { bg:'#F3E2CD', fg:'#B0642F' },
-  { bg:'#DCE7F2', fg:'#3E6FA6' },
-  { bg:'#E7ECDD', fg:'#5C7A52' },
-  { bg:'#F2DCE4', fg:'#A14D6C' },
-  { bg:'#E6DEF2', fg:'#6B4FA0' },
-  { bg:'#F2ECD8', fg:'#8C7A2E' }
-];
-function matiereColor(m){
-  if(!m) return { bg:'#EDE8DD', fg:'#8C8071' };
-  let hash = 0;
-  for(let i=0;i<m.length;i++) hash = (hash*31 + m.charCodeAt(i)) >>> 0;
-  return MATIERE_COLORS[hash % MATIERE_COLORS.length];
-}
-function matiereChip(m){
-  const c = matiereColor(m);
-  return `<span class="chip" style="background:${c.bg};color:${c.fg}">${escapeHtml(m) || 'Sans matière'}</span>`;
-}
-
-function showToast(msg){
-  let toast = document.getElementById('toast');
-  if(!toast){
-    toast = document.createElement('div');
-    toast.id = 'toast';
-    toast.className = 'toast';
-    document.body.appendChild(toast);
-  }
-  toast.textContent = msg;
-  toast.className = 'toast show';
-  clearTimeout(window._toastTimer);
-  window._toastTimer = setTimeout(()=>{ toast.className = 'toast'; }, 4500);
-}
-
-function loadData(){
-  try{
-    const stored = localStorage.getItem('course-data');
-    data.courses = stored ? JSON.parse(stored) : [];
-  }catch(e){
-    data.courses = [];
-  }
-}
-
-function saveCourses(){
-  try{
-    localStorage.setItem('course-data', JSON.stringify(data.courses));
-    return true;
-  }catch(e){
-    console.error('Erreur de sauvegarde', e);
-    showToast("La sauvegarde a échoué.");
-    return false;
-  }
-}
-
-function nextStepFor(course){
-  const done = course.doneSteps || [];
-  for(const n of INTERVALS){
-    if(!done.includes(n)) return n;
-  }
-  return null;
-}
-
-function getTodayItems(){
-  const t = todayStr();
-  const items = [];
-  for(const c of data.courses){
-    const step = nextStepFor(c);
-    if(step===null) continue;
-    const due = addDays(c.dateAdded, step);
-    if(due <= t) items.push({ course:c, step, due, overdue: due < t });
-  }
-  items.sort((a,b)=> a.due.localeCompare(b.due));
-  return items;
-}
-function getUpcomingItems(){
-  const t = todayStr();
-  const items = [];
-  for(const c of data.courses){
-    const step = nextStepFor(c);
-    if(step===null) continue;
-    const due = addDays(c.dateAdded, step);
-    if(due > t) items.push({ course:c, step, due });
-  }
-  items.sort((a,b)=> a.due.localeCompare(b.due));
-  return items.slice(0,8);
-}
-
-function el(html){
-  const t = document.createElement('template'); t.innerHTML = html.trim(); return t.content.firstChild;
-}
-
-function render(){
-  const app = document.getElementById('app');
-  app.innerHTML = '';
-  app.appendChild(renderHeader());
-  if(view.courseId){
-    app.appendChild(renderCourseDetail());
-  } else if(view.tab==='today'){
-    app.appendChild(renderToday());
-  } else if(view.tab==='courses'){
-    app.appendChild(renderCourses());
-  } else if(view.tab==='flashcards'){
-    app.appendChild(renderContentTab('flashcards'));
-  } else if(view.tab==='qcm'){
-    app.appendChild(renderContentTab('qcm'));
-  } else if(view.tab==='questions'){
-    app.appendChild(renderContentTab('questions'));
-  }
-  if(!view.courseId){
-    const fab = el(`<button class="fab" title="Ajouter un cours">+</button>`);
-    fab.onclick = ()=> openAddModal();
-    app.appendChild(fab);
-  }
-}
-
-function renderHeader(){
-  const wrap = el(`<div></div>`);
-  wrap.appendChild(el(`
-    <div>
-      <h1>📖 Carnet de révision</h1>
-      <div class="subtitle">Tes cours, tes flashcards, ton planning — méthode des J</div>
+  <!-- AUTHENTIFICATION (LOGIN / INSCRIPTION) -->
+  <div id="authModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+    <div class="bg-slate-800 border border-slate-700 p-6 rounded-xl max-w-md w-full shadow-xl">
+      <h2 class="text-2xl font-bold text-sky-400 mb-4 text-center">Espace PASS & Tutorat</h2>
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm text-slate-400 mb-1">Identifiant</label>
+          <input id="authUsername" type="text" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-white" placeholder="Ton nom ou pseudo">
+        </div>
+        <div>
+          <label class="block text-sm text-slate-400 mb-1">Code PIN (4 chiffres)</label>
+          <input id="authPin" type="password" maxlength="4" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-white text-center tracking-widest text-lg" placeholder="****">
+        </div>
+        <div class="flex gap-3 pt-2">
+          <button onclick="login()" class="flex-1 bg-sky-600 hover:bg-sky-500 font-semibold py-2 rounded transition">Connexion</button>
+          <button onclick="register()" class="flex-1 bg-slate-700 hover:bg-slate-600 font-semibold py-2 rounded transition">Créer compte</button>
+        </div>
+      </div>
     </div>
-  `));
-  if(!view.courseId){
-    const nav = el(`
-      <nav>
-        <button data-tab="today" class="${view.tab==='today'?'active':''}">📅 Aujourd'hui</button>
-        <button data-tab="courses" class="${view.tab==='courses'?'active':''}">📚 Mes cours</button>
-        <button data-tab="flashcards" class="${view.tab==='flashcards'?'active':''}">🗂️ Flashcards</button>
-        <button data-tab="qcm" class="${view.tab==='qcm'?'active':''}">✅ QCM</button>
-        <button data-tab="questions" class="${view.tab==='questions'?'active':''}">❓ Questions</button>
+  </div>
+
+  <!-- CONTAINER PRINCIPAL -->
+  <div id="app" class="hidden max-w-6xl mx-auto p-4 md:p-6">
+    
+    <!-- HEADER & NAVIGATION -->
+    <header class="flex flex-col md:flex-row justify-between items-center pb-6 mb-6 border-b border-slate-800 gap-4">
+      <div>
+        <h1 class="text-2xl font-bold text-sky-400">PASS - Révisions Partagées</h1>
+        <p class="text-sm text-slate-400">Connecté en tant que : <span id="userBadge" class="font-semibold text-slate-200"></span></p>
+      </div>
+      
+      <!-- ONGLETS COMMUNS ET PRIVES -->
+      <nav class="flex gap-2 bg-slate-800 p-1.5 rounded-lg border border-slate-700">
+        <button onclick="switchTab('prepa')" id="tab-prepa" class="px-4 py-2 rounded-md text-sm font-medium transition bg-sky-600 text-white">🏫 Prépa</button>
+        <button onclick="switchTab('tutorat')" id="tab-tutorat" class="px-4 py-2 rounded-md text-sm font-medium transition text-slate-400 hover:text-white">🎓 Tutorat</button>
+        <button onclick="switchTab('planning')" id="tab-planning" class="px-4 py-2 rounded-md text-sm font-medium transition text-slate-400 hover:text-white">📅 Mon J (Privé)</button>
+        <button onclick="switchTab('admin')" id="tab-admin" class="hidden px-4 py-2 rounded-md text-sm font-medium transition text-red-400 hover:text-red-300">🚨 Signalements</button>
       </nav>
-    `);
-    nav.querySelectorAll('button').forEach(b=>{
-      b.onclick = ()=>{ view.tab = b.dataset.tab; render(); };
-    });
-    wrap.appendChild(nav);
-  }
-  return wrap;
-}
+    </header>
 
-const CONTENT_META = {
-  flashcards: { key:'flashcards', label:'flashcard', icon:'🗂️', btnClass:'blue', empty:"Aucune flashcard pour l'instant." },
-  qcm:        { key:'qcm', label:'question de QCM', icon:'✅', btnClass:'green', empty:"Aucun QCM pour l'instant." },
-  questions:  { key:'questions', label:'question de cours', icon:'❓', btnClass:'purple', empty:"Aucune question de cours pour l'instant." }
-};
+    <!-- SECTION 1 : COURS EN COMMUN (PREPA / TUTORAT) -->
+    <main id="content-courses" class="space-y-6">
+      <!-- FORMULAIRE UPLOAD PDF -->
+      <div class="bg-slate-800/60 border border-slate-700 p-4 rounded-xl">
+        <h3 class="font-semibold text-lg mb-3 text-sky-300">Ajouter un nouveau cours en commun</h3>
+        <form id="uploadForm" class="grid grid-cols-1 md:grid-cols-4 gap-3">
+          <input id="courseTitle" type="text" placeholder="Titre du cours (ex: UE1 - Chimie)" class="bg-slate-900 border border-slate-700 rounded p-2 text-sm text-white" required>
+          <input id="courseMatiere" type="text" placeholder="Matière / Chapitre" class="bg-slate-900 border border-slate-700 rounded p-2 text-sm text-white" required>
+          <input id="coursePdf" type="file" accept="application/pdf" class="bg-slate-900 border border-slate-700 rounded p-1 text-sm text-slate-400" required>
+          <button type="submit" class="bg-sky-600 hover:bg-sky-500 font-semibold rounded text-sm py-2 transition">Téléverser et Partager</button>
+        </form>
+      </div>
 
-function renderContentTab(type){
-  const meta = CONTENT_META[type];
-  const wrap = el(`<div></div>`);
-  const section = el(`<div class="section"></div>`);
-  if(data.courses.length===0){
-    section.appendChild(el(`<div class="empty">${meta.empty}</div>`));
-    wrap.appendChild(section);
-    return wrap;
-  }
-  [...data.courses].sort((a,b)=> b.dateAdded.localeCompare(a.dateAdded)).forEach(c=>{
-    const items = c[meta.key] || [];
-    const row = el(`
-      <div class="row">
-        <div class="row-main">
-          <div class="row-title">${escapeHtml(c.title)}</div>
-          <div class="row-sub">${matiereChip(c.matiere)} · ${items.length} ${meta.label}${items.length>1?'s':''}</div>
+      <!-- LISTE DES COURS EN COMMUN -->
+      <div class="space-y-4">
+        <h3 class="text-xl font-bold" id="currentCategoryTitle">Cours Prépa</h3>
+        <div id="coursesList" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <!-- Les cours partagés s'afficheront ici -->
         </div>
       </div>
-    `);
-    const btn = el(`<button class="btn ${meta.btnClass}${items.length?' outline':''} btn-small">${items.length ? 'Réviser' : 'Générer'}</button>`);
-    btn.onclick = async (e)=>{
-      e.stopPropagation();
-      if(items.length){
-        view.courseId = c.id; view.mode = type; view.cardIndex=0; view.flipped=false; view.qIndex=0; view.qSelected=null; view.qScore=0;
-        render();
+    </main>
+
+    <!-- SECTION 2 : EMPLOI DU TEMPS PRIVÉ (METHODE DES J) -->
+    <main id="content-planning" class="hidden space-y-6">
+      <div class="bg-slate-800/60 border border-slate-700 p-6 rounded-xl">
+        <h3 class="font-bold text-xl text-sky-400 mb-2">Ton Questionnaire d'Organisation (Privé)</h3>
+        <p class="text-sm text-slate-400 mb-4">L'IA va calibrer ton planning de révision sur-mesure selon ton rythme et tes coefficients.</p>
+        
+        <form id="profileForm" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs text-slate-400 mb-1">Matière préférée</label>
+            <input id="favSubject" type="text" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-sm">
+          </div>
+          <div>
+            <label class="block text-xs text-slate-400 mb-1">Pic d'énergie (Moment le plus en forme)</label>
+            <select id="activeTime" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-sm">
+              <option value="matin">Matin (8h - 12h)</option>
+              <option value="apres-midi">Après-midi (14h - 18h)</option>
+              <option value="soir">Soir / Nuit</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs text-slate-400 mb-1">Baisse d'énergie (Coup de barre)</label>
+            <select id="leastActiveTime" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-sm">
+              <option value="debut-aprem">Début d'après-midi (13h - 15h)</option>
+              <option value="fin-soiree">Fin de soirée</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs text-slate-400 mb-1">Horaires de travail (ex: 08:00 - 22:00)</label>
+            <input id="workHours" type="text" placeholder="08:00 - 22:00" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-sm">
+          </div>
+          <div>
+            <label class="block text-xs text-slate-400 mb-1">Créneaux de Sport / Repos</label>
+            <input id="sportHours" type="text" placeholder="ex: Mardi 18h-20h" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-sm">
+          </div>
+          <div>
+            <label class="block text-xs text-slate-400 mb-1">Matières difficiles / Coefficients</label>
+            <input id="difficulties" type="text" placeholder="ex: Anatomie (coeff 10), Chimie (coeff 8)" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-sm">
+          </div>
+          <div class="md:col-span-2">
+            <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-500 font-semibold py-2.5 rounded transition">Générer mon Emploi du Temps personnalisé</button>
+          </div>
+        </form>
+      </div>
+
+      <!-- AFFICHAGE DU PLANNING GENERÉ -->
+      <div id="timetableDisplay" class="bg-slate-800/40 border border-slate-700 p-6 rounded-xl hidden">
+        <h3 class="font-bold text-xl mb-4 text-emerald-400">Ton Planning Hebdomadaire des J</h3>
+        <div id="scheduleGrid" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+      </div>
+    </main>
+
+    <!-- SECTION 3 : PANEL ADMINISTRATION / SIGNALEMENTS -->
+    <main id="content-admin" class="hidden space-y-4">
+      <h3 class="text-xl font-bold text-red-400">Erreurs signalées par les étudiants</h3>
+      <div id="reportsList" class="space-y-3">
+        <!-- Les erreurs signalées apparaîtront ici pour correction -->
+      </div>
+    </main>
+
+  </div>
+
+  <script>
+    let currentUser = null;
+    let currentTab = 'prepa';
+
+    // --- AUTHENTIFICATION ---
+    async function login() {
+      const username = document.getElementById('authUsername').value;
+      const pin = document.getElementById('authPin').value;
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, pin })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        currentUser = data;
+        initApp();
       } else {
-        btn.disabled = true; btn.textContent = 'Génération…';
-        await generate(c, type);
-        if((c[meta.key]||[]).length){
-          view.courseId = c.id; view.mode = type; view.cardIndex=0; view.flipped=false; view.qIndex=0; view.qSelected=null; view.qScore=0;
-          render();
-        }
+        alert(data.error);
       }
-    };
-    row.appendChild(btn);
-    section.appendChild(row);
-  });
-  wrap.appendChild(section);
-  return wrap;
-}
-
-function renderToday(){
-  const wrap = el(`<div></div>`);
-  const due = getTodayItems();
-  const upcoming = getUpcomingItems();
-
-  const section = el(`<div class="section"></div>`);
-  if(due.length===0){
-    section.appendChild(el(`<div class="empty">Rien à réviser aujourd'hui. Profites-en pour avancer sur un nouveau cours.</div>`));
-  } else {
-    due.forEach(item=>{
-      const row = el(`
-        <div class="row">
-          <div class="row-main">
-            <div class="row-title">${escapeHtml(item.course.title)}</div>
-            <div class="row-sub">${matiereChip(item.course.matiere)} · J+${item.step}${item.overdue ? ' · en retard' : ''}</div>
-          </div>
-          <span class="tag due">à réviser</span>
-        </div>
-      `);
-      row.onclick = ()=>{ view.courseId = item.course.id; view.mode=null; render(); };
-      section.appendChild(row);
-    });
-  }
-  wrap.appendChild(section);
-
-  if(upcoming.length>0){
-    wrap.appendChild(el(`<div class="divider"></div>`));
-    wrap.appendChild(el(`<div class="section-title">⏳ À venir</div>`));
-    const up = el(`<div class="section"></div>`);
-    upcoming.forEach(item=>{
-      const row = el(`
-        <div class="row">
-          <div class="row-main">
-            <div class="row-title">${escapeHtml(item.course.title)}</div>
-            <div class="row-sub">${matiereChip(item.course.matiere)} · J+${item.step}</div>
-          </div>
-          <span class="tag upcoming">${fmtDate(item.due)}</span>
-        </div>
-      `);
-      up.appendChild(row);
-    });
-    wrap.appendChild(up);
-  }
-  return wrap;
-}
-
-function renderCourses(){
-  const wrap = el(`<div></div>`);
-  const section = el(`<div class="section"></div>`);
-  if(data.courses.length===0){
-    section.appendChild(el(`<div class="empty">Aucun cours ajouté pour l'instant. Touche le bouton + pour commencer.</div>`));
-  } else {
-    [...data.courses].sort((a,b)=> b.dateAdded.localeCompare(a.dateAdded)).forEach(c=>{
-      const step = nextStepFor(c);
-      const stepLabel = step===null ? 'Cycle terminé' : `Prochaine étape : J+${step}`;
-      const row = el(`
-        <div class="row">
-          <div class="row-main">
-            <div class="row-title">${escapeHtml(c.title)}</div>
-            <div class="row-sub">${matiereChip(c.matiere)} · ${stepLabel}</div>
-          </div>
-        </div>
-      `);
-      row.onclick = ()=>{ view.courseId = c.id; view.mode=null; render(); };
-      section.appendChild(row);
-    });
-  }
-  wrap.appendChild(section);
-  return wrap;
-}
-
-function renderCourseDetail(){
-  const c = data.courses.find(x=>x.id===view.courseId);
-  const wrap = el(`<div></div>`);
-  const back = el(`<button class="back">‹ Retour</button>`);
-  back.onclick = ()=>{ view.courseId=null; view.mode=null; render(); };
-  wrap.appendChild(back);
-
-  if(view.mode==='flashcards') return (wrap.appendChild(renderFlashcardMode(c)), wrap);
-  if(view.mode==='qcm') return (wrap.appendChild(renderQcmMode(c)), wrap);
-  if(view.mode==='questions') return (wrap.appendChild(renderQuestionsMode(c)), wrap);
-
-  wrap.appendChild(el(`
-    <div>
-      <h2>${escapeHtml(c.title)}</h2>
-      <div class="subtitle" style="display:flex;align-items:center;gap:8px;margin-top:8px">${matiereChip(c.matiere)} <span>ajouté le ${fmtDate(c.dateAdded)}</span></div>
-    </div>
-  `));
-
-  const preview = el(`<div class="section"></div>`);
-  preview.appendChild(el(`<div class="section-title">📄 Contenu extrait</div>`));
-  preview.appendChild(el(`<div class="textpreview">${escapeHtml((c.text||'').slice(0,600))}${c.text && c.text.length>600 ? '…' : ''}</div>`));
-  wrap.appendChild(preview);
-
-  const actions = el(`<div class="actionsrow"></div>`);
-
-  const fcBtn = el(`<button class="btn blue${c.flashcards && c.flashcards.length ? ' outline' : ''} btn-small">${c.flashcards && c.flashcards.length ? `🗂️ Réviser les flashcards (${c.flashcards.length})` : '🗂️ Générer des flashcards'}</button>`);
-  fcBtn.onclick = async ()=>{
-    if(c.flashcards && c.flashcards.length){ view.mode='flashcards'; view.cardIndex=0; view.flipped=false; render(); }
-    else { await generate(c, 'flashcards'); }
-  };
-  actions.appendChild(fcBtn);
-
-  if(c.flashcards && c.flashcards.length){
-    const more = el(`<button class="btn ghost btn-small">+ de flashcards</button>`);
-    more.onclick = ()=> generate(c, 'flashcards');
-    actions.appendChild(more);
-  }
-
-  const qcmBtn = el(`<button class="btn green${c.qcm && c.qcm.length ? ' outline' : ''} btn-small">${c.qcm && c.qcm.length ? `✅ Faire le QCM (${c.qcm.length})` : '✅ Générer un QCM'}</button>`);
-  qcmBtn.onclick = async ()=>{
-    if(c.qcm && c.qcm.length){ view.mode='qcm'; view.qIndex=0; view.qSelected=null; view.qScore=0; render(); }
-    else { await generate(c, 'qcm'); }
-  };
-  actions.appendChild(qcmBtn);
-
-  if(c.qcm && c.qcm.length){
-    const more = el(`<button class="btn ghost btn-small">+ de questions</button>`);
-    more.onclick = ()=> generate(c, 'qcm');
-    actions.appendChild(more);
-  }
-
-  const qBtn = el(`<button class="btn purple${c.questions && c.questions.length ? ' outline' : ''} btn-small">${c.questions && c.questions.length ? `❓ Questions de cours (${c.questions.length})` : '❓ Générer des questions'}</button>`);
-  qBtn.onclick = async ()=>{
-    if(c.questions && c.questions.length){ view.mode='questions'; view.cardIndex=0; view.flipped=false; render(); }
-    else { await generate(c, 'questions'); }
-  };
-  actions.appendChild(qBtn);
-
-  if(c.questions && c.questions.length){
-    const more = el(`<button class="btn ghost btn-small">+ de questions</button>`);
-    more.onclick = ()=> generate(c, 'questions');
-    actions.appendChild(more);
-  }
-
-  wrap.appendChild(actions);
-
-  const loadingHolder = el(`<div></div>`);
-  wrap.appendChild(loadingHolder);
-  wrap._loadingHolder = loadingHolder;
-  window._currentLoadingHolder = loadingHolder;
-
-  wrap.appendChild(el(`<div class="divider"></div>`));
-  const stepSection = el(`<div></div>`);
-  stepSection.appendChild(el(`<div class="section-title">🗓️ Planning de révision</div>`));
-  INTERVALS.forEach(n=>{
-    const done = (c.doneSteps||[]).includes(n);
-    const due = addDays(c.dateAdded, n);
-    const isNext = nextStepFor(c) === n;
-    const row = el(`
-      <div class="row">
-        <div class="row-main">
-          <div class="row-title">J+${n}</div>
-          <div class="row-sub">${fmtDate(due)}</div>
-        </div>
-        ${done ? '<span class="tag done">fait</span>' : (isNext && due<=todayStr() ? '<button class="btn green btn-small">Marquer fait</button>' : '<span class="tag upcoming">à venir</span>')}
-      </div>
-    `);
-    if(!done && isNext && due<=todayStr()){
-      row.querySelector('button').onclick = (e)=>{
-        e.stopPropagation();
-        c.doneSteps = c.doneSteps || [];
-        c.doneSteps.push(n);
-        saveCourses();
-        render();
-      };
     }
-    stepSection.appendChild(row);
-  });
-  wrap.appendChild(stepSection);
 
-  const dangerZone = el(`<div class="section" style="margin-top:34px"></div>`);
-  const delBtn = el(`<button class="btn ghost btn-small" style="color:var(--accent);border-color:var(--accent-soft)">🗑️ Supprimer ce cours</button>`);
-  delBtn.onclick = ()=>{
-    if(!confirm(`Supprimer "${c.title}" ?`)) return;
-    data.courses = data.courses.filter(x=>x.id!==c.id);
-    saveCourses();
-    view.courseId = null; view.mode = null;
-    render();
-  };
-  dangerZone.appendChild(delBtn);
-  wrap.appendChild(dangerZone);
-
-  return wrap;
-}
-
-async function generate(course, type){
-  const holder = window._currentLoadingHolder;
-  if(holder) holder.innerHTML = `<div class="loading"><span class="spinner"></span>Génération en cours…</div>`;
-
-  const prompts = {
-    flashcards: `Tu es un tuteur PASS. Génère 8 flashcards pour le cours "${course.title}". Réponds UNIQUEMENT en JSON valide : {"flashcards":[{"question":"...","answer":"..."}]}\n\nCours:\n${(course.text||'').slice(0,12000)}`,
-    qcm: `Tu es un tuteur PASS. Génère 6 QCM pour le cours "${course.title}". Réponds UNIQUEMENT en JSON valide : {"qcm":[{"question":"...","options":["...","...","...","..."],"correctIndex":0,"explanation":"..."}]}\n\nCours:\n${(course.text||'').slice(0,12000)}`,
-    questions: `Tu es un tuteur PASS. Génère 4 questions de cours rédigées pour "${course.title}". Réponds UNIQUEMENT en JSON valide : {"questions":[{"question":"...","answer":"..."}]}\n\nCours:\n${(course.text||'').slice(0,12000)}`
-  };
-
-  try{
-    const response = await fetch("/api/generate", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model: "claude-sonnet-4-6",
-        max_tokens: 1000,
-        messages: [{ role: "user", content: prompts[type] }]
-      })
-    });
-    const responseData = await response.json();
-    const text = (responseData.content||[]).map(b=>b.text||'').join('\n');
-    const parsed = parseAiJson(text);
-
-    if(type==='flashcards') course.flashcards = (course.flashcards||[]).concat(parsed.flashcards||[]);
-    else if(type==='qcm') course.qcm = (course.qcm||[]).concat(parsed.qcm||[]);
-    else if(type==='questions') course.questions = (course.questions||[]).concat(parsed.questions||[]);
-    saveCourses();
-  } catch(e){
-    console.error(e);
-    if(holder) holder.innerHTML = `<div class="loading">Échec de la génération.</div>`;
-    showToast("La génération a échoué. Réessaie.");
-    return;
-  }
-  render();
-}
-
-function renderFlashcardMode(c){
-  const wrap = el(`<div></div>`);
-  const cards = c.flashcards || [];
-  if(cards.length===0){ wrap.appendChild(el(`<div class="empty">Pas encore de flashcards.</div>`)); return wrap; }
-  if(view.cardIndex >= cards.length) view.cardIndex = 0;
-  const card = cards[view.cardIndex];
-
-  wrap.appendChild(el(`<div class="progress">Carte ${view.cardIndex+1} / ${cards.length}</div>`));
-  const cardEl = el(`<div class="card">${view.flipped ? escapeHtml(card.answer) : escapeHtml(card.question)}</div>`);
-  cardEl.onclick = ()=>{ view.flipped = !view.flipped; render(); };
-  wrap.appendChild(cardEl);
-
-  const actions = el(`<div class="actionsrow"></div>`);
-  const prev = el(`<button class="btn ghost btn-small">‹ Précédente</button>`);
-  prev.onclick = ()=>{ view.cardIndex = Math.max(0, view.cardIndex-1); view.flipped=false; render(); };
-  const flip = el(`<button class="btn secondary btn-small">Retourner</button>`);
-  flip.onclick = ()=>{ view.flipped = !view.flipped; render(); };
-  const next = el(`<button class="btn ghost btn-small">Suivante ›</button>`);
-  next.onclick = ()=>{ view.cardIndex = Math.min(cards.length-1, view.cardIndex+1); view.flipped=false; render(); };
-  actions.appendChild(prev); actions.appendChild(flip); actions.appendChild(next);
-  wrap.appendChild(actions);
-  return wrap;
-}
-
-function renderQuestionsMode(c){
-  const wrap = el(`<div></div>`);
-  const cards = c.questions || [];
-  if(cards.length===0){ wrap.appendChild(el(`<div class="empty">Pas encore de questions.</div>`)); return wrap; }
-  if(view.cardIndex >= cards.length) view.cardIndex = 0;
-  const card = cards[view.cardIndex];
-
-  wrap.appendChild(el(`<div class="progress">Question ${view.cardIndex+1} / ${cards.length}</div>`));
-  const cardEl = el(`<div class="card long">${view.flipped ? `<strong>${escapeHtml(card.question)}</strong><div style="margin-top:14px;line-height:1.6">${escapeHtml(card.answer)}</div>` : escapeHtml(card.question)}</div>`);
-  cardEl.onclick = ()=>{ view.flipped = !view.flipped; render(); };
-  wrap.appendChild(cardEl);
-
-  const actions = el(`<div class="actionsrow"></div>`);
-  const prev = el(`<button class="btn ghost btn-small">‹ Précédente</button>`);
-  prev.onclick = ()=>{ view.cardIndex = Math.max(0, view.cardIndex-1); view.flipped=false; render(); };
-  const flip = el(`<button class="btn secondary btn-small">${view.flipped ? 'Voir la question' : 'Voir la réponse'}</button>`);
-  flip.onclick = ()=>{ view.flipped = !view.flipped; render(); };
-  const next = el(`<button class="btn ghost btn-small">Suivante ›</button>`);
-  next.onclick = ()=>{ view.cardIndex = Math.min(cards.length-1, view.cardIndex+1); view.flipped=false; render(); };
-  actions.appendChild(prev); actions.appendChild(flip); actions.appendChild(next);
-  wrap.appendChild(actions);
-  return wrap;
-}
-
-function renderQcmMode(c){
-  const wrap = el(`<div></div>`);
-  const qs = c.qcm || [];
-  if(qs.length===0){ wrap.appendChild(el(`<div class="empty">Pas encore de questions.</div>`)); return wrap; }
-
-  if(view.qIndex >= qs.length){
-    wrap.appendChild(el(`<h2>Résultat</h2>`));
-    wrap.appendChild(el(`<div class="subtitle">${view.qScore} / ${qs.length} bonnes réponses</div>`));
-    const restart = el(`<button class="btn secondary btn-small" style="margin-top:16px">Recommencer</button>`);
-    restart.onclick = ()=>{ view.qIndex=0; view.qSelected=null; view.qScore=0; render(); };
-    wrap.appendChild(restart);
-    return wrap;
-  }
-
-  const q = qs[view.qIndex];
-  wrap.appendChild(el(`<div class="progress">Question ${view.qIndex+1} / ${qs.length}</div>`));
-  wrap.appendChild(el(`<h2 style="font-size:17px">${escapeHtml(q.question)}</h2>`));
-
-  const opts = el(`<div></div>`);
-  q.options.forEach((opt, i)=>{
-    let cls = 'qcm-opt';
-    if(view.qSelected !== null){
-      if(i===q.correctIndex) cls += ' correct';
-      else if(i===view.qSelected) cls += ' wrong';
-    }
-    const b = el(`<button class="${cls}">${escapeHtml(opt)}</button>`);
-    b.onclick = ()=>{
-      if(view.qSelected !== null) return;
-      view.qSelected = i;
-      if(i===q.correctIndex) view.qScore++;
-      render();
-    };
-    opts.appendChild(b);
-  });
-  wrap.appendChild(opts);
-
-  if(view.qSelected !== null){
-    wrap.appendChild(el(`<div class="explain">${escapeHtml(q.explanation||'')}</div>`));
-    const next = el(`<button class="btn secondary btn-small" style="margin-top:16px">Question suivante</button>`);
-    next.onclick = ()=>{ view.qIndex++; view.qSelected=null; render(); };
-    wrap.appendChild(next);
-  }
-  return wrap;
-}
-
-function openAddModal(){
-  const bg = el(`<div class="modal-bg"></div>`);
-  const modal = el(`
-    <div class="modal">
-      <h2>Ajouter un cours</h2>
-      <label>Titre du cours</label>
-      <input type="text" id="f-title" placeholder="Ex : Le potentiel d'action">
-      <label>Matière</label>
-      <input type="text" id="f-matiere" placeholder="Ex : UE3 - Biophysique">
-      <label>Contenu du cours</label>
-      <div class="filerow">
-        <input type="file" id="f-file" accept="application/pdf">
-      </div>
-      <textarea id="f-text" placeholder="Colle le texte du cours ici ou importe un PDF"></textarea>
-      <div class="modal-actions">
-        <button class="btn ghost" id="f-cancel">Annuler</button>
-        <button class="btn" id="f-save">Ajouter</button>
-      </div>
-    </div>
-  `);
-  bg.appendChild(modal);
-  document.body.appendChild(bg);
-
-  modal.querySelector('#f-cancel').onclick = ()=> bg.remove();
-
-  modal.querySelector('#f-file').onchange = async (e)=>{
-    const file = e.target.files[0];
-    if(!file) return;
-    const textarea = modal.querySelector('#f-text');
-    textarea.disabled = true;
-    textarea.value = 'Extraction du texte…';
-    let fullText = '';
-    try{
-      const buf = await file.arrayBuffer();
-      const pdf = await pdfjsLib.getDocument({ data: buf.slice(0) }).promise;
-      for(let i=1;i<=pdf.numPages;i++){
-        const page = await pdf.getPage(i);
-        const content = await page.getTextContent();
-        fullText += content.items.map(it=>it.str).join(' ') + '\n\n';
+    async function register() {
+      const username = document.getElementById('authUsername').value;
+      const pin = document.getElementById('authPin').value;
+      const res = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, pin })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        alert("Compte créé avec succès ! Clique sur Connexion.");
+      } else {
+        alert(data.error);
       }
-      fullText = fullText.trim();
-      textarea.value = fullText;
-    }catch(err){
-      alert("L'extraction a échoué.");
-    }finally{
-      textarea.disabled = false;
     }
-  };
 
-  modal.querySelector('#f-save').onclick = ()=>{
-    const title = modal.querySelector('#f-title').value.trim();
-    const matiere = modal.querySelector('#f-matiere').value.trim();
-    let text = modal.querySelector('#f-text').value.trim();
-    if(!title || !text){ alert('Donne un titre et un contenu.'); return; }
+    function initApp() {
+      document.getElementById('authModal').classList.add('hidden');
+      document.getElementById('app').classList.remove('hidden');
+      document.getElementById('userBadge').innerText = currentUser.username + (currentUser.role === 'admin' ? ' (Admin)' : '');
+      if (currentUser.role === 'admin') {
+        document.getElementById('tab-admin').classList.remove('hidden');
+      }
+      loadCourses();
+    }
 
-    const newCourse = {
-      id: uid(), title, matiere, text,
-      dateAdded: todayStr(), doneSteps: [], flashcards: [], qcm: [], questions: []
-    };
+    // --- ONGLETS ---
+    function switchTab(tab) {
+      currentTab = tab;
+      ['prepa', 'tutorat', 'planning', 'admin'].forEach(t => {
+        const btn = document.getElementById(`tab-${t}`);
+        if (btn) btn.className = `px-4 py-2 rounded-md text-sm font-medium transition ${t === tab ? 'bg-sky-600 text-white' : 'text-slate-400 hover:text-white'}`;
+      });
 
-    data.courses.push(newCourse);
-    saveCourses();
-    bg.remove();
-    view.tab = 'courses';
-    render();
-  };
-}
+      document.getElementById('content-courses').classList.toggle('hidden', tab === 'planning' || tab === 'admin');
+      document.getElementById('content-planning').classList.toggle('hidden', tab !== 'planning');
+      document.getElementById('content-admin').classList.toggle('hidden', tab !== 'admin');
 
-loadData();
-render();
-</script>
+      if (tab === 'prepa' || tab === 'tutorat') {
+        document.getElementById('currentCategoryTitle').innerText = tab === 'prepa' ? 'Cours Prépa Partagés' : 'Cours Tutorat Partagés';
+        loadCourses();
+      } else if (tab === 'admin') {
+        loadReports();
+      }
+    }
+
+    // --- SIGNALEMENT D'ERREURS ---
+    async function reportError(itemId, courseId) {
+      const reason = prompt("Décris l'erreur constatée sur ce contenu :");
+      if (!reason) return;
+      await fetch('/api/reports', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ itemId, courseId, userId: currentUser.userId, reason })
+      });
+      alert("Erreur signalée à l'administrateur. Merci !");
+    }
+
+    async function loadCourses() {
+      // Charger les cours partagés depuis l'API
+    }
+
+    async function loadReports() {
+      // Charger les erreurs pour l'admin
+    }
+  </script>
 </body>
 </html>
